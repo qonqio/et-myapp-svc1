@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Contoso.Service1.FunctionHost": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7169",
+      "launchBrowser": false
+    }
+  }
+}
