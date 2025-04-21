@@ -1,0 +1,48 @@
+name: AT-AT-Manual-DotNet-Integration-Tests
+
+on:
+  workflow_dispatch:
+
+env:
+  BuildConfiguration: Release
+  WorkingDirectory: src/dotnet
+  SolutionFile: Contoso.MyApp.sln
+  TestCategory: Integration
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore dependencies
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet restore ${{ env.SolutionFile }}
+
+      - name: Build solution
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet build ${{ env.SolutionFile }} --configuration ${{ env.BuildConfiguration }}
+
+      - name: Run tests with code coverage
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet test ${{ env.SolutionFile }} \
+            --configuration ${{ env.BuildConfiguration }} \
+            --filter "Category=${{ env.TestCategory }}" \
+            --collect:"XPlat Code Coverage" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Publish code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: '**/coverage.cobertura.xml'
