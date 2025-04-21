@@ -9,7 +9,7 @@ on:
 env:
   BuildConfiguration: Release
   WorkingDirectory: src/dotnet
-  SolutionFile: Contoso.MyApp.sln
+  SolutionFile: Contoso.Service1.sln
   DotnetVersion: 8.x
 
 concurrency:
@@ -47,7 +47,7 @@ jobs:
     - name: Publish solution
       working-directory: ${{ env.WorkingDirectory }}
       run: |
-        dotnet publish ./Contoso.MyApp.FunctionHost/Contoso.MyApp.FunctionHost.csproj \
+        dotnet publish ./Contoso.Service1.FunctionHost/Contoso.Service1.FunctionHost.csproj \
           --configuration ${{ env.BuildConfiguration }} \
           --output ./publish
 
