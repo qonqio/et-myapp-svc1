@@ -36,7 +36,7 @@ resource "azurerm_windows_function_app" "main" {
     "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED" = 1
     "WEBSITE_RUN_FROM_PACKAGE"               = 1
     "SCM_DO_BUILD_DURING_DEPLOYMENT"         = "false"
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"  = "@Microsoft.KeyVault(VaultName=${data.azurerm_key_vault.core.name};SecretName=ApplicationInsights-ConnectionString)"
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"  = "@Microsoft.KeyVault(VaultName=${data.azurerm_key_vault.core.name};SecretName=ApplicationInsights-ConnectionString2)"
     "FUNCTION_MANAGED_IDENTITY"              = azurerm_user_assigned_identity.function.client_id
     "STORAGE_BLOB_CONNECTION_STRING"         = azurerm_storage_account.data.primary_connection_string
     "STORAGE_QUEUE_CONNECTION_STRING"        = azurerm_storage_account.data.primary_connection_string
