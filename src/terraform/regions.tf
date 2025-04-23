@@ -7,6 +7,7 @@ module "region_stamp_primary" {
   application_name                = var.application_name
   environment_name                = var.environment_name
   core_name                       = var.core_name
+  core_env                        = var.core_env
   name                            = "${var.application_name}-${var.environment_name}"
   number                          = 1
   os_type                         = var.os_type

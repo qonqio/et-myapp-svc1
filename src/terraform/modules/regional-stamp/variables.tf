@@ -13,6 +13,9 @@ variable "environment_name" {
 variable "core_name" {
   type = string
 }
+variable "core_env" {
+  type = string
+}
 variable "number" {
   type = number
 }
