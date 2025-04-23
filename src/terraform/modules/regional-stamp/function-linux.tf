@@ -33,7 +33,7 @@ resource "azurerm_linux_function_app" "main" {
     "FUNCTIONS_WORKER_RUNTIME"              = "dotnet-isolated"
     "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "false"
     "WEBSITE_RUN_FROM_PACKAGE"              = 1
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = "@Microsoft.KeyVault(VaultName=${data.azurerm_key_vault.core.name};SecretName=ApplicationInsights-ConnectionString)"
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = "@Microsoft.KeyVault(VaultName=${data.azurerm_key_vault.core.name};SecretName=ApplicationInsights-ConnectionString2)"
   }
 
 }
