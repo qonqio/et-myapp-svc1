@@ -3,7 +3,7 @@ name: AT-AT-Push-DotNet-Deploy-dev
 on:
   workflow_run:
     workflows: ["AT-AT-Release-dev"]
-    types: 
+    types:
       - completed
 
 env:
@@ -21,46 +21,45 @@ permissions:
   contents: read
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: ${{ env.DotnetVersion }}
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DotnetVersion }}
 
-    - name: Restore dependencies
-      working-directory: ${{ env.WorkingDirectory }}
-      run: |
-        dotnet restore ${{ env.SolutionFile }}
+      - name: Restore dependencies
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet restore ${{ env.SolutionFile }}
 
-    - name: Build solution
-      working-directory: ${{ env.WorkingDirectory }}
-      run: |
-        dotnet build ${{ env.SolutionFile }} --configuration ${{ env.BuildConfiguration }}
+      - name: Build solution
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet build ${{ env.SolutionFile }} --configuration ${{ env.BuildConfiguration }}
 
-    - name: Publish solution
-      working-directory: ${{ env.WorkingDirectory }}
-      run: |
-        dotnet publish ./Contoso.Service1.FunctionHost/Contoso.Service1.FunctionHost.csproj \
-          --configuration ${{ env.BuildConfiguration }} \
-          --output ./publish
+      - name: Publish solution
+        working-directory: ${{ env.WorkingDirectory }}
+        run: |
+          dotnet publish ./Contoso.Service1.FunctionHost/Contoso.Service1.FunctionHost.csproj \
+            --configuration ${{ env.BuildConfiguration }} \
+            --output ./publish
 
-    - name: Generate the Deployment Package
-      working-directory: ${{ env.WorkingDirectory }}/publish
-      run: |
-        zip -r ../deployment.zip .
-      
-    - name: Upload Deployment Package
-      uses: actions/upload-artifact@v4
-      with:
-        name: dotnet-deployment
-        path: '**/deployment.zip'
+      - name: Generate the Deployment Package
+        working-directory: ${{ env.WorkingDirectory }}/publish
+        run: |
+          zip -r ../deployment.zip .
+
+      - name: Upload Deployment Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-deployment
+          path: "**/deployment.zip"
 
   terraform-plan:
     runs-on: ubuntu-latest
@@ -69,71 +68,73 @@ jobs:
       name: dev
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: 'Az CLI login'
-      uses: azure/login@v2
-      with:
-        client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        tenant-id: ${{ vars.ARM_TENANT_ID }}
-        subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      - name: "Az CLI login"
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
 
-    - id: setup
-      name: Setup `terraform`
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ vars.TERRAFORM_VERSION }}
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
-    - id: validate
-      name: Terraform Validate
-      env:
-        ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
-        ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        ARM_USE_OIDC: true
-        TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-        TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
-        
-        terraform init \
-          -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
-          -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
-          -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-          -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
-          
-        terraform validate
+      - id: validate
+        name: Terraform Validate
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          ARM_USE_OIDC: true
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+          TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
 
-    - id: plan
-      name: Terraform Plan
-      env:
-        ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
-        ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        ARM_USE_OIDC: true
-        TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-        TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
-        
-        terraform init \
-          -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
-          -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
-          -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-          -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
-          
-        terraform plan -out=terraform-plan-${{ github.run_id }}.tfplan
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
+            -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+            
+          terraform validate
 
-    - name: Upload Plan to Azure Storage
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        az storage blob upload \
-          --account-name ${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }} \
-          --container-name ${{ vars.BACKEND_STORAGE_PLAN_CONTAINER_NAME }} \
-          --name terraform-plan-${{ github.run_id }}.tfplan \
-          --file terraform-plan-${{ github.run_id }}.tfplan
+      - id: plan
+        name: Terraform Plan
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          ARM_USE_OIDC: true
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+          TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
+
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
+            -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+            
+          terraform plan -out=terraform-plan-${{ github.run_id }}.tfplan
+
+      - name: Upload Plan to Azure Storage
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          az storage blob upload \
+            --account-name ${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }} \
+            --container-name ${{ vars.BACKEND_STORAGE_PLAN_CONTAINER_NAME }} \
+            --name terraform-plan-${{ github.run_id }}.tfplan \
+            --file terraform-plan-${{ github.run_id }}.tfplan
 
   terraform-apply:
     needs: terraform-plan
@@ -146,59 +147,60 @@ jobs:
       name: dev
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: 'Az CLI login'
-      uses: azure/login@v2
-      with:
-        client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        tenant-id: ${{ vars.ARM_TENANT_ID }}
-        subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      - name: "Az CLI login"
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
 
-    - id: setup
-      name: Setup `terraform`
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ vars.TERRAFORM_VERSION }}
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TERRAFORM_VERSION }}
 
-    - name: Download Plan from Azure Storage
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        az storage blob download \
-          --account-name ${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }} \
-          --container-name ${{ vars.BACKEND_STORAGE_PLAN_CONTAINER_NAME }} \
-          --name terraform-plan-${{ github.run_id }}.tfplan \
-          --file terraform-plan-${{ github.run_id }}.tfplan
+      - name: Download Plan from Azure Storage
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          az storage blob download \
+            --account-name ${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }} \
+            --container-name ${{ vars.BACKEND_STORAGE_PLAN_CONTAINER_NAME }} \
+            --name terraform-plan-${{ github.run_id }}.tfplan \
+            --file terraform-plan-${{ github.run_id }}.tfplan
 
-    - id: apply
-      name: Terraform Apply
-      env:
-        ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
-        ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        ARM_USE_OIDC: true
-        TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-        TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
-        
-        terraform init \
-          -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
-          -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
-          -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-          -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+      - id: apply
+        name: Terraform Apply
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          ARM_USE_OIDC: true
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+          TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
 
-        terraform apply terraform-plan-${{ github.run_id }}.tfplan
-        
-        resource_group_name=$(terraform output -raw primary_resource_group_name)
-        echo $resource_group_name
-        echo "resource_group_name=$resource_group_name" >> "$GITHUB_OUTPUT"
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
+            -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
 
-        function_name=$(terraform output -raw primary_function_name)
-        echo $function_name
-        echo "function_name=$function_name" >> "$GITHUB_OUTPUT"
-  
+          terraform apply terraform-plan-${{ github.run_id }}.tfplan
+
+          resource_group_name=$(terraform output -raw primary_resource_group_name)
+          echo $resource_group_name
+          echo "resource_group_name=$resource_group_name" >> "$GITHUB_OUTPUT"
+
+          function_name=$(terraform output -raw primary_function_name)
+          echo $function_name
+          echo "function_name=$function_name" >> "$GITHUB_OUTPUT"
+
   deploy:
     needs: [terraform-apply, build]
     runs-on: ubuntu-latest
@@ -207,28 +209,28 @@ jobs:
       name: dev
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v4
-      with:
-        name: dotnet-deployment
-    
-    - name: Display structure of downloaded files
-      run: ls -R
+      - uses: actions/download-artifact@v4
+        with:
+          name: dotnet-deployment
 
-    - name: 'Az CLI login'
-      uses: azure/login@v2
-      with:
-        client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
-        tenant-id: ${{ vars.ARM_TENANT_ID }}
-        subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      - name: Display structure of downloaded files
+        run: ls -R
 
-    - name: Deploy
-      working-directory: ${{ env.WorkingDirectory }}
-      env:
-        ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
-        RESOURCE_GROUP_NAME: ${{needs.terraform-apply.outputs.resource_group_name}}
-        FUNCTION_NAME: ${{needs.terraform-apply.outputs.function_name}}
-      run: |
-        az account set -s $ARM_SUBSCRIPTION_ID --output none
-        az functionapp deployment source config-zip -g $RESOURCE_GROUP_NAME -n $FUNCTION_NAME --src ./deployment.zip
+      - name: "Az CLI login"
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+      - name: Deploy
+        working-directory: ${{ env.WorkingDirectory }}
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          RESOURCE_GROUP_NAME: ${{needs.terraform-apply.outputs.resource_group_name}}
+          FUNCTION_NAME: ${{needs.terraform-apply.outputs.function_name}}
+        run: |
+          az account set -s $ARM_SUBSCRIPTION_ID --output none
+          az functionapp deployment source config-zip -g $RESOURCE_GROUP_NAME -n $FUNCTION_NAME --src ./deployment.zip
