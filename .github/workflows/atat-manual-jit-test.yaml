@@ -15,6 +15,8 @@ permissions:
 jobs:
   deploy-current:
     runs-on: ubuntu-latest
+    outputs:
+      env_suffix: ${{ steps.generate_app_name.outputs.env_suffix }}
 
     environment:
       name: ${{ github.event.inputs.environment }}
@@ -32,6 +34,7 @@ jobs:
           SHORT_SUFFIX=$(echo "$RUN_ID" | rev | cut -c1-3 | rev)
           echo "Short suffix:"$SHORT_SUFFIX
           echo "ENV_SUFFIX=${SHORT_SUFFIX}" >> $GITHUB_ENV
+          echo "env_suffix=${SHORT_SUFFIX}" >> $GITHUB_OUTPUT
 
       - name: "Az CLI login"
         uses: azure/login@v1
@@ -91,6 +94,7 @@ jobs:
           terraform apply -auto-approve
 
   deploy-new:
+    needs: deploy-current
     runs-on: ubuntu-latest
 
     environment:
@@ -98,15 +102,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Generate unique app name
-        id: generate_app_name
-        run: |
-          RUN_ID="${GITHUB_RUN_ID}"
-          echo "RUN ID:"$RUN_ID
-          SHORT_SUFFIX=$(echo "$RUN_ID" | rev | cut -c1-3 | rev)
-          echo "Short suffix:"$SHORT_SUFFIX
-          echo "ENV_SUFFIX=${SHORT_SUFFIX}" >> $GITHUB_ENV
 
       - name: "Az CLI login"
         uses: azure/login@v1
@@ -129,7 +124,7 @@ jobs:
           ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
           ARM_USE_OIDC: true
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ env.ENV_SUFFIX }}
+          TF_VAR_environment_name: ${{ needs.deploy-current.outputs.env_suffix }}
           TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
@@ -139,7 +134,7 @@ jobs:
             -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
             -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
             -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ env.ENV_NAME }}"
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ needs.deploy-current.outputs.env_suffix }}"
             
           terraform validate
 
@@ -151,7 +146,7 @@ jobs:
           ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
           ARM_USE_OIDC: true
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ env.ENV_SUFFIX }}
+          TF_VAR_environment_name: ${{ needs.deploy-current.outputs.env_suffix }}
           TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
@@ -161,7 +156,7 @@ jobs:
             -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
             -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
             -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ env.ENV_NAME }}"
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ needs.deploy-current.outputs.env_suffix }}"
             
           terraform apply -auto-approve
 
@@ -173,7 +168,7 @@ jobs:
           ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
           ARM_USE_OIDC: true
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ env.ENV_SUFFIX }}
+          TF_VAR_environment_name: ${{ needs.deploy-current.outputs.env_suffix }}
           TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
@@ -183,6 +178,6 @@ jobs:
             -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
             -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
             -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
-            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ env.ENV_NAME }}"
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ needs.deploy-current.outputs.env_suffix }}"
             
           terraform destroy -auto-approve
