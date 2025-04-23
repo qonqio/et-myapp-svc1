@@ -160,6 +160,9 @@ jobs:
             
           terraform apply -auto-approve
 
+      - name: ⏳ Wait before destroy
+        run: sleep 300
+
       - id: destroy
         name: Terraform Destroy
         env:
