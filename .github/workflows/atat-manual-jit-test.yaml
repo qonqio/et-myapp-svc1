@@ -81,4 +81,4 @@ jobs:
             -backend-config="container_name=${{ vars.BACKEND_STORAGE_STATE_CONTAINER_NAME }}" \
             -backend-config="key=${{ env.APP_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
             
-          terraform apply -auto-approve
+          terraform plan
