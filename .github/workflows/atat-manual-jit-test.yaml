@@ -26,7 +26,9 @@ jobs:
 
       - name: Generate unique app name
         id: generate_app_name
-        run: echo "ENV_SUFFIX=${GITHUB_RUN_ID}" >> $GITHUB_ENV
+        run: RUN_ID="${GITHUB_RUN_ID}"
+          SHORT_SUFFIX=$(echo "$RUN_ID" | rev | cut -c1-3 | rev)
+          echo "ENV_SUFFIX=${SHORT_SUFFIX}" >> $GITHUB_ENV
 
       - name: "Az CLI login"
         uses: azure/login@v1
@@ -49,8 +51,8 @@ jobs:
           ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
           ARM_USE_OIDC: true
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-          TF_VAR_environment_suffix: ${{ env.ENV_SUFFIX }}
+          TF_VAR_environment_name: ${{ env.ENV_SUFFIX }}
+          TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
           export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN
@@ -71,8 +73,8 @@ jobs:
           ARM_CLIENT_ID: ${{ vars.TERRAFORM_ARM_CLIENT_ID }}
           ARM_USE_OIDC: true
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-          TF_VAR_environment_suffix: ${{ env.ENV_SUFFIX }}
+          TF_VAR_environment_name: ${{ env.ENV_SUFFIX }}
+          TF_VAR_core_env: ${{ vars.ENVIRONMENT_NAME }}
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
           export ARM_OID_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN

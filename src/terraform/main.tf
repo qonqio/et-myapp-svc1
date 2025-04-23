@@ -17,7 +17,7 @@ locals {
 }
 
 resource "azurerm_resource_group" "main" {
-  name     = "rg-${var.application_name}${var.environment_suffix}-${var.environment_name}"
+  name     = "rg-${var.application_name}-${var.environment_name}"
   location = var.primary_location
   tags     = local.all_tags
 }

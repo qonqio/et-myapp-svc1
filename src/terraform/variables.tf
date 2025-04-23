@@ -13,14 +13,13 @@ variable "os_type" {
 variable "core_name" {
   type = string
 }
+variable "core_env" {
+  type = string
+}
 variable "additional_tags" {
   type    = map(string)
   default = {}
 }
 variable "eventgrid_subscriptions_enabled" {
   type = bool
-}
-variable "environment_suffix" {
-  type    = string
-  default = ""
 }
