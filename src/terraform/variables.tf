@@ -14,9 +14,13 @@ variable "core_name" {
   type = string
 }
 variable "additional_tags" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }
 variable "eventgrid_subscriptions_enabled" {
   type = bool
+}
+variable "environment_suffix" {
+  type    = string
+  default = ""
 }
