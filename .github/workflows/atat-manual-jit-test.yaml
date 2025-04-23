@@ -1,4 +1,4 @@
-name: AT-AT-Manual-Terraform-Apply
+name: AT-AT-Manual-JIT-Test
 
 on:
   workflow_dispatch:
