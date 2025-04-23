@@ -27,7 +27,9 @@ jobs:
       - name: Generate unique app name
         id: generate_app_name
         run: RUN_ID="${GITHUB_RUN_ID}"
+          echo "RUN ID:"$RUN_ID
           SHORT_SUFFIX=$(echo "$RUN_ID" | rev | cut -c1-3 | rev)
+          echo "Short suffix:"$SHORT_SUFFIX
           echo "ENV_SUFFIX=${SHORT_SUFFIX}" >> $GITHUB_ENV
 
       - name: "Az CLI login"
